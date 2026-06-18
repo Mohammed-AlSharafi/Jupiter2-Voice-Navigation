@@ -1,0 +1,24 @@
+# Secrets — DO NOT commit real keys
+config/params.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# ROS
+build/
+devel/
+logs/
+*.bag
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+maps/
+commands.txt

@@ -1,0 +1,88 @@
+<launch>
+
+  <arg name="mode" doc="record or navigate"/>
+  <arg name="api_key" default=""/>
+  <arg name="model" default=""/>
+  <arg name="openai_base" default=""/>
+  <arg name="navigation_timeout" default=""/>
+  <arg name="input_topic" default=""/>
+  <arg name="whisper_model" default=""/>
+  <arg name="wakeword_name" default=""/>
+  <arg name="locations_path" default="$(find room_guide)/config/locations.yaml"/>
+  <arg name="map_file" default="$(env HOME)/catkin_ws/maps/RL_1.yaml"/>
+
+  <!-- Load all defaults from params.yaml into a shared namespace -->
+  <rosparam command="load" file="$(find room_guide)/config/params.yaml" ns="room_guide"/>
+
+  <group if="$(eval arg('mode') == 'record')">
+    <include file="$(find jupiterobot2_navigation)/launch/jupiterobot2_navigation.launch">
+      <arg name="map_file" value="$(arg map_file)"/>
+    </include>
+
+    <node name="location_recorder_node"
+          pkg="room_guide"
+          type="location_recorder_node.py"
+          output="screen"
+          launch-prefix="xterm -e">
+      <param name="locations_path" value="$(arg locations_path)"/>
+    </node>
+  </group>
+
+  <group if="$(eval arg('mode') == 'navigate')">
+    <include file="$(find jupiterobot2_navigation)/launch/jupiterobot2_navigation.launch">
+      <arg name="map_file" value="$(arg map_file)"/>
+    </include>
+
+    <!-- Load params into llm_nav_node's private namespace -->
+    <rosparam command="load" file="$(find room_guide)/config/params.yaml" ns="llm_nav_node"/>
+
+    <!-- CLI overrides for LLM params -->
+    <group if="$(eval arg('api_key') != '')">
+      <param name="llm_nav_node/api_key" value="$(arg api_key)"/>
+    </group>
+    <group if="$(eval arg('model') != '')">
+      <param name="llm_nav_node/model" value="$(arg model)"/>
+    </group>
+    <group if="$(eval arg('openai_base') != '')">
+      <param name="llm_nav_node/openai_base" value="$(arg openai_base)"/>
+    </group>
+    <group if="$(eval arg('navigation_timeout') != '')">
+      <param name="llm_nav_node/navigation_timeout" value="$(arg navigation_timeout)"/>
+    </group>
+    <group if="$(eval arg('input_topic') != '')">
+      <param name="llm_nav_node/input_topic" value="$(arg input_topic)"/>
+    </group>
+
+    <!-- CLI overrides for whisper params -->
+    <group if="$(eval arg('whisper_model') != '')">
+      <param name="room_guide/whisper_model" value="$(arg whisper_model)"/>
+    </group>
+    <group if="$(eval arg('wakeword_name') != '')">
+      <param name="room_guide/wakeword_name" value="$(arg wakeword_name)"/>
+    </group>
+
+    <node name="llm_nav_node"
+          pkg="room_guide"
+          type="llm_nav_node.py"
+          output="screen">
+      <rosparam command="load" file="$(find room_guide)/config/locations.yaml"/>
+    </node>
+
+    <node name="prompt_node"
+          pkg="room_guide"
+          type="prompt_node.py"
+          output="screen"
+          launch-prefix="xterm -e"/>
+
+    <node name="whisper_node"
+          pkg="room_guide"
+          type="whisper_node.py"
+          output="screen">
+      <env name="OUTPUT_TOPIC" value="$(param /room_guide/input_topic)"/>
+      <env name="WHISPER_MODEL" value="$(param /room_guide/whisper_model)"/>
+      <env name="WAKEWORD_NAME" value="$(param /room_guide/wakeword_name)"/>
+    </node>
+
+  </group>
+
+</launch>
