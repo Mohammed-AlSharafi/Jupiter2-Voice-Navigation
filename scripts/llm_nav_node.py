@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-import sys
-sys.path.insert(0, "/opt/ros/noetic/lib/python3/dist-packages")
-sys.path.insert(0, "/home/mustar/catkin_ws/devel/lib/python3/dist-packages")
-
 import json
 import threading
 import requests
@@ -19,10 +15,10 @@ class LLMNavNode:
 
         self.input_topic = rospy.get_param("~input_topic", "/llm_input")
         self.openai_base = rospy.get_param("~openai_base", "https://openrouter.ai/api/v1")
-        self.nav_tout    = float(rospy.get_param("~navigation_timeout", 60.0))
-        self.api_key     = rospy.get_param("~api_key", "")
-        self.model       = rospy.get_param("~model", "openrouter/free")
-        self.locations   = rospy.get_param("~locations", {})
+        self.nav_tout = float(rospy.get_param("~navigation_timeout", 60.0))
+        self.api_key = rospy.get_param("~api_key", "")
+        self.model = rospy.get_param("~model", "openrouter/free")
+        self.locations = rospy.get_param("~locations", {})
 
         if not self.api_key:
             rospy.logfatal("[llm_nav] ~api_key is not set. Shutting down.")
@@ -64,18 +60,18 @@ class LLMNavNode:
             return msg
 
         loc = self.locations[location_name]
-        x   = float(loc.get("x", 0.0))
-        y   = float(loc.get("y", 0.0))
-        z   = float(loc.get("z", 0.0))
-        w   = float(loc.get("w", 1.0))
+        x = float(loc.get("x", 0.0))
+        y = float(loc.get("y", 0.0))
+        z = float(loc.get("z", 0.0))
+        w = float(loc.get("w", 1.0))
 
         rospy.loginfo("[llm_nav] Navigating to '%s' (x=%.2f, y=%.2f, z=%.2f, w=%.2f)…", location_name, x, y, z, w)
 
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id    = "map"
-        goal.target_pose.header.stamp       = rospy.Time.now()
-        goal.target_pose.pose.position      = Point(x=x, y=y)
-        goal.target_pose.pose.orientation   = Quaternion(z=z, w=w)
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose.position = Point(x=x, y=y)
+        goal.target_pose.pose.orientation = Quaternion(z=z, w=w)
 
         self.move_base.send_goal(goal)
         if not self.move_base.wait_for_result(rospy.Duration(self.nav_tout)):
@@ -149,8 +145,8 @@ class LLMNavNode:
                 rospy.logerr("[llm_nav] Request failed: %s", e)
                 return f"Error contacting LLM: {e}"
 
-            data    = resp.json()
-            choice  = data["choices"][0]
+            data = resp.json()
+            choice = data["choices"][0]
             message = choice["message"]
             messages.append(message)
 
@@ -159,7 +155,7 @@ class LLMNavNode:
 
             for tc in message["tool_calls"]:
                 if tc["function"]["name"] == "navigate_to_location":
-                    args   = json.loads(tc["function"]["arguments"])
+                    args = json.loads(tc["function"]["arguments"])
                     result = self.navigate_to_location(args.get("location_name", ""))
                 else:
                     result = f"Unknown tool '{tc['function']['name']}'."

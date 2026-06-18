@@ -5,9 +5,9 @@
   <arg name="model" default=""/>
   <arg name="openai_base" default=""/>
   <arg name="navigation_timeout" default=""/>
-  <arg name="input_topic" default=""/>
-  <arg name="whisper_model" default=""/>
-  <arg name="wakeword_name" default=""/>
+  <arg name="input_topic" default="/llm_input"/>
+  <arg name="whisper_model" default="small"/>
+  <arg name="wakeword_name" default="hey_jarvis"/>
   <arg name="locations_path" default="$(find room_guide)/config/locations.yaml"/>
   <arg name="map_file" default="$(env HOME)/catkin_ws/maps/RL_1.yaml"/>
 
@@ -78,9 +78,9 @@
           pkg="room_guide"
           type="whisper_node.py"
           output="screen">
-      <env name="OUTPUT_TOPIC" value="$(param /room_guide/input_topic)"/>
-      <env name="WHISPER_MODEL" value="$(param /room_guide/whisper_model)"/>
-      <env name="WAKEWORD_NAME" value="$(param /room_guide/wakeword_name)"/>
+      <env name="OUTPUT_TOPIC" value="$(arg input_topic)"/>
+      <env name="WHISPER_MODEL" value="$(arg whisper_model)"/>
+      <env name="WAKEWORD_NAME" value="$(arg wakeword_name)"/>
     </node>
 
   </group>

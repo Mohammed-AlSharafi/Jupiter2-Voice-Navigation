@@ -13,15 +13,15 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from geometry_msgs.msg import Twist
 
 
-LINEAR_SPEED  = 0.15   # m/s
-ANGULAR_SPEED = 0.5    # rad/s
+LINEAR_SPEED = 0.15 # m/s
+ANGULAR_SPEED = 0.5 # rad/s
 
 KEY_BINDINGS = {
-    'w': ( LINEAR_SPEED,  0.0),
-    'x': (-LINEAR_SPEED,  0.0),
-    'a': (0.0,  ANGULAR_SPEED),
+    'w': ( LINEAR_SPEED, 0.0),
+    'x': (-LINEAR_SPEED, 0.0),
+    'a': (0.0, ANGULAR_SPEED),
     'd': (0.0, -ANGULAR_SPEED),
-    's': (0.0,  0.0),
+    's': (0.0, 0.0),
 }
 
 BANNER = """
@@ -96,10 +96,10 @@ class LocationRecorder:
             return
 
         self.locations[name] = {
-            "x":     round(pose.position.x, 3),
-            "y":     round(pose.position.y, 3),
-            "z":     round(pose.orientation.z, 3),
-            "w":     round(pose.orientation.w, 3),
+            "x": round(pose.position.x, 3),
+            "y": round(pose.position.y, 3),
+            "z": round(pose.orientation.z, 3),
+            "w": round(pose.orientation.w, 3),
         }
         self._save_yaml()
         print(f"Saved '{name}' \n{self.locations[name]}\n")
@@ -127,7 +127,7 @@ class LocationRecorder:
                         current_lin, current_ang = KEY_BINDINGS[ch]
 
                 twist = Twist()
-                twist.linear.x  = current_lin
+                twist.linear.x = current_lin
                 twist.angular.z = current_ang
                 self.cmd_pub.publish(twist)
                 rate.sleep()

@@ -1,4 +1,4 @@
-#!/home/mustar/catkin_ws/src/room_guide/.venv/bin/python3
+#!/home/mnajib/distrobox/ros_noetic_home/catkin_ws/src/room_guide/.venv/bin/python3
 import os
 import subprocess
 import threading
@@ -8,9 +8,10 @@ import torch
 import whisper
 from silero_vad import load_silero_vad, VADIterator
 from openwakeword.model import Model as WakeWordModel
+import openwakeword.utils
 
-OWW_CHUNK  = 1280
-VAD_CHUNK  = 512
+OWW_CHUNK = 1280
+VAD_CHUNK = 512
 BASE_BLOCK = 256
 
 
@@ -20,20 +21,24 @@ def env(key, default):
 
 class WhisperNode:
     def __init__(self):
-        self.output_topic        = env("OUTPUT_TOPIC",        "/llm_input")
-        self.sample_rate         = int(env("SAMPLE_RATE",     16000))
-        self.language            = env("LANGUAGE",            "")
-        self.wakeword_name       = env("WAKEWORD_NAME",       "hey_jarvis")
-        self.wakeword_threshold  = float(env("WAKEWORD_THRESHOLD",  0.5))
-        self.vad_threshold       = float(env("VAD_THRESHOLD",       0.5))
-        self.min_silence_ms      = int(env("MIN_SILENCE_MS",        600))
+        self.output_topic = env("OUTPUT_TOPIC", "/llm_input")
+        self.sample_rate = int(env("SAMPLE_RATE", 16000))
+        self.language = env("LANGUAGE", "")
+        self.wakeword_name = env("WAKEWORD_NAME", "hey_jarvis")
+        self.wakeword_threshold = float(env("WAKEWORD_THRESHOLD", 0.5))
+        self.vad_threshold = float(env("VAD_THRESHOLD", 0.5))
+        self.min_silence_ms = int(env("MIN_SILENCE_MS", 600))
         self.no_speech_threshold = float(env("NO_SPEECH_THRESHOLD", 0.6))
-        self.min_audio_duration  = float(env("MIN_AUDIO_DURATION",  0.5))
-        model_size               = env("WHISPER_MODEL",       "small")
+        self.min_audio_duration = float(env("MIN_AUDIO_DURATION", 0.5))
+        model_size = env("WHISPER_MODEL", "small")
 
         torch.set_num_threads(1)
 
         print(f"[whisper] Loading wake word model…", flush=True)
+        try:
+            openwakeword.utils.download_models()
+        except Exception:
+            pass
         self.wakeword = WakeWordModel(inference_framework="onnx")
 
         print(f"[whisper] Loading Silero VAD…", flush=True)
@@ -66,7 +71,7 @@ class WhisperNode:
     def _transcribe(self, audio: np.ndarray) -> str | None:
         kwargs = {"language": self.language} if self.language else {}
         result = self.whisper.transcribe(audio, **kwargs)
-        text   = result["text"].strip()
+        text = result["text"].strip()
 
         segments = result.get("segments", [])
         if segments and text:
@@ -96,10 +101,10 @@ class WhisperNode:
             print(f"[whisper] Transcription error: {e}", flush=True)
 
     def run(self):
-        state     = "WAKEWORD"
+        state = "WAKEWORD"
         recording = []
-        oww_buf   = np.array([], dtype=np.float32)
-        vad_buf   = np.array([], dtype=np.float32)
+        oww_buf = np.array([], dtype=np.float32)
+        vad_buf = np.array([], dtype=np.float32)
 
         min_samples = int(self.sample_rate * self.min_audio_duration)
 
@@ -107,18 +112,18 @@ class WhisperNode:
                             dtype="float32", blocksize=BASE_BLOCK) as stream:
             while True:
                 block, _ = stream.read(BASE_BLOCK)
-                audio    = block.flatten()
+                audio = block.flatten()
 
                 if state == "WAKEWORD":
                     oww_buf = np.append(oww_buf, audio)
                     while len(oww_buf) >= OWW_CHUNK:
                         if self._detected_wakeword(oww_buf[:OWW_CHUNK]):
                             print("[whisper] Wake word detected!", flush=True)
-                            state     = "RECORDING"
+                            state = "RECORDING"
                             recording = []
-                            vad_buf   = np.array([], dtype=np.float32)
+                            vad_buf = np.array([], dtype=np.float32)
                             self.vad.reset_states()
-                            oww_buf   = np.array([], dtype=np.float32)
+                            oww_buf = np.array([], dtype=np.float32)
                             break
                         oww_buf = oww_buf[OWW_CHUNK:]
 
@@ -143,10 +148,10 @@ class WhisperNode:
                             stream.stop()
                             stream.start()
 
-                            state     = "WAKEWORD"
+                            state = "WAKEWORD"
                             recording = []
-                            oww_buf   = np.array([], dtype=np.float32)
-                            vad_buf   = np.array([], dtype=np.float32)
+                            oww_buf = np.array([], dtype=np.float32)
+                            vad_buf = np.array([], dtype=np.float32)
                             break
 
                         vad_buf = vad_buf[VAD_CHUNK:]
