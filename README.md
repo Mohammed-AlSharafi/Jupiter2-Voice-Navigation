@@ -44,6 +44,33 @@ to point at your venv:
 
 Place your API key in `config/params.yaml`. This file is gitignored.
 
+## Whisper node configuration
+
+`whisper_node` runs in its own Python 3.10 venv (ROS Noetic ships 3.8), so it
+cannot import `rospy` and therefore cannot read ROS params. Its config is read
+from environment variables via `os.environ` instead, and the launch file passes
+the relevant params through with `<env>` tags.
+
+Wired through `params.yaml`:
+
+- `OUTPUT_TOPIC`  (from `input_topic`)
+- `WHISPER_MODEL` (from `whisper_model`)
+- `WAKEWORD_NAME` (from `wakeword_name`)
+
+The remaining settings fall back to hardcoded Python defaults in the script and
+are not exposed by the launch file. To override them, export the env var before
+launching:
+
+| Env var | Default | Notes |
+| --- | --- | --- |
+| `SAMPLE_RATE` | `16000` | Audio sample rate in Hz. |
+| `LANGUAGE` | `""` | Two-letter language code for Whisper; `""` = auto-detect. |
+| `WAKEWORD_THRESHOLD` | `0.5` | Wake-word confidence in `[0, 1]`. Lower = more sensitive. |
+| `VAD_THRESHOLD` | `0.5` | Silero VAD speech probability threshold. |
+| `MIN_SILENCE_MS` | `600` | Trailing silence in ms that ends an utterance. |
+| `NO_SPEECH_THRESHOLD` | `0.6` | Filters Whisper transcripts whose segments average above this `no_speech_prob` (silence/hallucination guard). |
+| `MIN_AUDIO_DURATION` | `0.5` | Seconds; recordings shorter than this are discarded. |
+
 ## Usage
 
 Navigate mode:
